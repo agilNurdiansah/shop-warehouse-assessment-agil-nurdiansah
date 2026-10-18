@@ -1,279 +1,253 @@
 # Shop Warehouse Management System - RESTful API
 
-[![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://www.oracle.com/java/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
-[![Security](https://img.shields.io/badge/Security-Spring%20Security%206%20%2B%20JWT-blue.svg)](https://spring.io/projects/spring-security)
-[![Database](https://img.shields.io/badge/Database-H2%20In--Memory-yellow.svg)](https://www.h2database.com/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)]()
+[![Java Version](https://img.shields.io/badge/Java-17%20LTS-ED8B00?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/17/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Spring Security](https://img.shields.io/badge/Spring%20Security-6.3.4-6DB33F?logo=springsecurity&logoColor=white)](https://spring.io/projects/spring-security)
+[![Database](https://img.shields.io/badge/Database-H2%20(Default)%20%7C%20PostgreSQL-336791?logo=postgresql&logoColor=white)](https://www.h2database.com/)
+[![OpenAPI](https://img.shields.io/badge/Swagger%20UI-OpenAPI%203-85EA2D?logo=swagger&logoColor=black)](http://localhost:8080/swagger-ui.html)
+[![Build & Tests](https://img.shields.io/badge/Tests-8%2F8%20Passed-success)](https://junit.org/)
 
-> A robust, production-grade Spring Boot 3 backend system for managing a shop's warehouse inventory, item variants, dynamic pricing, and orders with automated **out-of-stock prevention**.
-
----
-
-## Table of Contents
-1. [Business Context & Requirements](#business-context--requirements)
-2. [Key Highlights & Architectural Decisions](#key-highlights--architectural-decisions)
-3. [Technology Stack](#technology-stack)
-4. [Domain Model & ER Diagram](#domain-model--er-diagram)
-5. [Out-of-Stock Prevention Mechanism](#out-of-stock-prevention-mechanism)
-6. [Pre-seeded Sample Data](#pre-seeded-sample-data)
-7. [Getting Started & How to Run](#getting-started--how-to-run)
-8. [API Documentation (Swagger UI & H2 Console)](#api-documentation)
-9. [API Endpoints & cURL Examples](#api-endpoints--curl-examples)
-10. [Assumptions Made](#assumptions-made)
-11. [Running Tests](#running-tests)
+> **Java Backend Developer Technical Assessment - GELI**  
+> A robust, enterprise-grade RESTful API backend for managing shop warehouse inventory, item variants, flexible pricing, and orders with automated **out-of-stock prevention** and **stateless JWT authentication**.
 
 ---
 
-## Business Context & Requirements
+## 📋 Daftar Isi
 
-This system satisfies the requirements outlined in the **Java Backend Developer Technical Assessment**:
-- **Item Tracking**: Manage shop items with unique SKUs and catalog information.
-- **Variant Tracking**: Items can have multiple variants (e.g., sizes, colors, material).
-- **Flexible Pricing**: Prices are defined per variant with a fallback base price on the item.
-- **Inventory Tracking**: Accurate stock level tracking for every item variant.
-- **Out-of-Stock Prevention**: Order checkout automatically enforces inventory availability, atomically rejects orders when stock is insufficient, and prevents race-condition overselling.
-- **CRUD Operations**: Comprehensive REST endpoints for Items, Variants, Inventory, Orders, and Authentication.
-- **Data Persistence**: In-memory relational database (H2) with clean JPA domain modeling.
-
----
-
-## Key Highlights & Architectural Decisions
-
-The application follows an **industry-standard layered Clean Architecture**:
-
-```
-src/main/java/com/geli/warehouse/
-├── common/             # Cross-cutting concerns (ApiResponse envelope, GlobalExceptionHandler)
-├── config/             # Spring configuration (OpenAPI Swagger 3, DataInitializer)
-├── controller/         # REST Controllers exposing versioned /api/v1 endpoints
-├── dto/
-│   ├── request/        # Request payload contracts with Jakarta Bean Validations
-│   └── response/       # Immutable, decoupled response transfer objects
-├── model/
-│   ├── entity/         # JPA entities (Item, ItemVariant, Inventory, Order, OrderItem, User)
-│   └── enums/          # Enumerations (Role, ItemStatus, OrderStatus, StockOperation)
-├── repository/         # Spring Data JPA repositories with custom derived and JPQL queries
-├── security/           # OAuth/JWT token provider, filter, and authentication manager
-└── service/
-    ├── impl/           # Business logic layer with @Transactional boundaries
-    └── ...             # Service interfaces (loose coupling)
-```
-
-### Architectural Decisions
-1. **Decoupled DTO Layer**: Domain entities are strictly isolated from API contracts using DTOs, preventing sensitive data exposure and cyclic serialization issues.
-2. **Unified API Envelope**: All REST responses follow a standardized JSON envelope (`ApiResponse<T>`) containing `success`, `message`, `data`, and `timestamp`.
-3. **Optimistic Concurrency Control**: The `Inventory` entity is equipped with JPA `@Version` to safeguard against race conditions during high-concurrency order placements.
-4. **Stateless Authentication**: Secured with Spring Security 6 using JWT (HMAC-SHA256). Catalog browsing is publicly accessible while stock adjustments and catalog mutations require staff/admin authorization.
-5. **Clean & Concise Code**: Avoids noisy, redundant comments. Code is self-documenting through expressive naming conventions and clean modular boundaries.
+1. [Teknologi & Versi yang Digunakan](#-teknologi--versi-yang-digunakan)
+2. [Panduan Cepat Setup & Menjalankan (Fresh Clone)](#-panduan-cepat-setup--menjalankan-fresh-clone)
+3. [Akun Testing & Sample Data Bawaan](#-akun-testing--sample-data-bawaan)
+4. [Dokumentasi Interaktif & Postman](#-dokumentasi-interaktif--postman)
+5. [Arsitektur & Keputusan Desain (Design Decisions)](#-arsitektur--keputusan-desain-design-decisions)
+6. [Mekanisme Pencegahan Penjualan Out-of-Stock](#-mekanisme-pencegahan-penjualan-out-of-stock)
+7. [Daftar Endpoint API & Contoh cURL](#-daftar-endpoint-api--contoh-curl)
+8. [Asumsi yang Dibuat (Assumptions Made)](#-asumsi-yang-dibuat-assumptions-made)
+9. [Menjalankan Automated Tests](#-menjalankan-automated-tests)
 
 ---
 
-## Technology Stack
+## 🛠 Teknologi & Versi yang Digunakan
 
-- **Java**: 17 LTS
-- **Framework**: Spring Boot 3.3.5
-- **ORM / Persistence**: Spring Data JPA & Hibernate 6.5
-- **Database**: H2 In-Memory Database (zero external setup required)
-- **Security**: Spring Security 6 & JJWT 0.12.6
-- **Validation**: Jakarta Validation (Hibernate Validator)
-- **Documentation**: Springdoc OpenAPI 2.6.0 (Swagger 3 UI)
-- **Build Tool**: Maven Wrapper (`./mvnw`)
-- **Testing**: JUnit 5, Mockito, Spring Boot Test, MockMvc
+Aplikasi dibangun menggunakan teknologi backend modern standar industri:
 
----
-
-## Domain Model & ER Diagram
-
-```mermaid
-erDiagram
-    USERS {
-        Long id PK
-        String username UK
-        String email UK
-        String password
-        String role
-    }
-
-    ITEM ||--o{ ITEM_VARIANT : "has variants"
-    ITEM {
-        Long id PK
-        String sku UK
-        String name
-        String description
-        BigDecimal basePrice
-        String status
-    }
-
-    ITEM_VARIANT ||--|| INVENTORY : "tracks stock"
-    ITEM_VARIANT {
-        Long id PK
-        Long itemId FK
-        String sku UK
-        String variantName
-        String size
-        String color
-        BigDecimal price
-    }
-
-    INVENTORY {
-        Long id PK
-        Long variantId FK, UK
-        Integer quantity
-        Integer reservedQuantity
-        Integer reorderThreshold
-        Long version
-        Instant lastRestockedAt
-    }
-
-    ORDER ||--o{ ORDER_ITEM : "contains"
-    ORDER {
-        Long id PK
-        String orderNumber UK
-        String customerName
-        String customerEmail
-        BigDecimal totalAmount
-        String status
-        Instant createdAt
-    }
-
-    ORDER_ITEM }o--|| ITEM_VARIANT : "references"
-    ORDER_ITEM {
-        Long id PK
-        Long orderId FK
-        Long variantId FK
-        String variantSku
-        String variantName
-        BigDecimal unitPrice
-        Integer quantity
-        BigDecimal subtotal
-    }
-```
-
----
-
-## Out-of-Stock Prevention Mechanism
-
-Preventing out-of-stock sales is implemented at the core transactional boundary:
-1. **Atomic Validation**: When `POST /api/v1/orders` is invoked, the `OrderService` executes within a `@Transactional` block.
-2. **Stock Verification**: For every requested variant, available stock is computed as `quantity - reservedQuantity`.
-3. **Rejection & Conflict Response**:
-   - If `availableStock < requestedQuantity`, an `InsufficientStockException` is thrown immediately.
-   - The global exception handler translates this into an **HTTP 409 Conflict** (or 400 Bad Request) with an explicit error message stating the variant SKU, available units, and requested units.
-   - No inventory is deducted and no partial order is recorded.
-4. **Concurrency Safety**: The `Inventory` entity utilizes `@Version` optimistic locking. If two requests attempt to purchase the last item simultaneously, only one succeeds and the second is safely rolled back.
-
----
-
-## Pre-seeded Sample Data
-
-Upon application startup, `DataInitializer` automatically seeds realistic sample data:
-
-### 1. Default Users & Testing Credentials
-| Username | Password | Role | Description |
+| Komponen | Library / Framework | Versi | Keterangan |
 |---|---|---|---|
-| `tester` | `tester123` | `ROLE_ADMIN` | Dedicated testing user with full administrative privileges |
-| `admin` | `admin123` | `ROLE_ADMIN` | Full access (Warehouse manager) |
-| `staff` | `staff123` | `ROLE_STAFF` | Inventory & item editing |
-| `customer` | `customer123` | `ROLE_CUSTOMER` | Standard shop customer |
-
-### 2. Pre-loaded Catalog & Stock
-| Item SKU | Item Name | Variant SKU | Size / Color | Price | Stock | Stock Status |
-|---|---|---|---|---|---|---|
-| `ITEM-TSHIRT` | Classic Cotton T-Shirt | `TSHIRT-BLK-M` | M / Black | $19.99 | 50 | In Stock |
-| `ITEM-TSHIRT` | Classic Cotton T-Shirt | `TSHIRT-BLK-L` | L / Black | $19.99 | 30 | In Stock |
-| `ITEM-TSHIRT` | Classic Cotton T-Shirt | `TSHIRT-WHT-M` | M / White | $18.99 | 3 | Low Stock (Threshold: 5) |
-| `ITEM-TSHIRT` | Classic Cotton T-Shirt | `TSHIRT-WHT-XL` | XL / White | $21.99 | **0** | **OUT OF STOCK** |
-| `ITEM-SHOES` | Pro Running Shoes | `SHOES-GRY-42` | 42 / Grey | $89.99 | 15 | In Stock |
-| `ITEM-SHOES` | Pro Running Shoes | `SHOES-GRY-43` | 43 / Grey | $89.99 | **0** | **OUT OF STOCK** |
-| `ITEM-SHOES` | Pro Running Shoes | `SHOES-BLU-42` | 42 / Blue | $94.99 | 8 | In Stock |
-| `ITEM-BACKPACK`| Urban Canvas Backpack | `BAG-NVY` | OneSize / Navy | $45.00 | 20 | In Stock |
+| **Programming Language** | Java (JDK) | **17 LTS** | Memenuhi batasan teknis PDF (Java 17+) |
+| **Framework** | Spring Boot | **3.3.5** | Versi stabil Spring Boot 3.x terbaru |
+| **ORM / Persistence** | Spring Data JPA / Hibernate | **6.5.3.Final** | Abstraksi database & automasi relasi DDL |
+| **Default Database** | H2 Database Engine | **2.2.224** | In-Memory (Zero-setup untuk kemudahan reviewer) |
+| **Production Database** | PostgreSQL Driver | **42.7.4** | Driver resmi PostgreSQL (opsional profile `postgres`) |
+| **Security & Auth** | Spring Security 6 | **6.3.4** | Proteksi endpoint berbasis role & filter chain |
+| **Token Provider** | JJWT (Java JWT) | **0.12.6** | Stateless JWT HMAC-SHA256 Bearer Token |
+| **Bean Validation** | Jakarta Validation (Hibernate Validator) | **3.0.2 / 8.0.1** | Validasi payload request DTO |
+| **API Documentation** | Springdoc OpenAPI (Swagger 3 UI) | **2.6.0** | Dokumentasi interaktif via browser |
+| **Productivity** | Project Lombok | **1.18.34** | Mengurangi boilerplate kode Java |
+| **Build & Dependency Tool** | Apache Maven Wrapper (`mvnw`) | **3.9.x** | Siap dijalankan tanpa perlu instalasi Maven manual |
+| **Testing** | JUnit 5, Mockito, MockMvc, AssertJ | **Latest** | Unit testing & full integration testing |
 
 ---
 
-## Getting Started & How to Run
+## 🚀 Panduan Cepat Setup & Menjalankan (Fresh Clone)
 
-### Prerequisites
-- **Java 17+** installed (`java -version`)
-- Git
+Ikuti langkah-langkah berikut ketika Anda baru saja meng-clone repository ini ke komputer lokal:
 
-### 1. Clone & Navigate
+### 1. Prasyarat Sistem (*Prerequisites*)
+- **Java 17 LTS atau lebih baru** sudah terpasang di komputer Anda.
+  ```bash
+  java -version
+  ```
+  *(Pastikan outputnya menunjukkan versi `17.x` atau lebih baru)*.
+- **Git** untuk version control.
+- *(Opsional)* **Postman** untuk pengujian API.
+
+> **Catatan:** Anda **TIDAK PERLU** menginstal Apache Maven atau database PostgreSQL secara manual, karena project ini sudah dilengkapi **Maven Wrapper (`./mvnw`)** dan database **H2 In-Memory**.
+
+---
+
+### 2. Langkah Clone & Menjalankan Aplikasi
+
+#### Step 1: Clone Repository
 ```bash
-git clone <repository-url>
+git clone <URL_REPOSITORY_ANDA>
 cd test-geli
 ```
 
-### 2. Run the Application
-The project includes the Maven Wrapper, so no external Maven installation is needed:
+#### Step 2: Jalankan Aplikasi
+Jalankan perintah ini di root folder proyek:
 
+**Di macOS / Linux:**
 ```bash
 ./mvnw spring-boot:run
 ```
 
-The application starts on `http://localhost:8080`.
+**Di Windows (Command Prompt / PowerShell):**
+```cmd
+mvnw.cmd spring-boot:run
+```
+
+#### Step 3: Verifikasi Bahwa Server Sudah Berjalan
+Buka browser Anda dan akses:
+- **Swagger UI**: [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+- **H2 Database Console**: [http://localhost:8080/h2-console](http://localhost:8080/h2-console)
+  - *JDBC URL*: `jdbc:h2:mem:warehousedb`
+  - *Username*: `sa`
+  - *Password*: *(kosongkan)*
 
 ---
 
-## API Documentation
+### 3. *(Opsional)* Menjalankan Menggunakan PostgreSQL Lokal
 
-### Interactive Swagger UI
-Open your browser and navigate to:
-```
-http://localhost:8080/swagger-ui.html
-```
-You can test all endpoints directly, authenticate via the "Authorize" button using a Bearer token, and inspect schemas.
+Jika Anda ingin menjalankan aplikasi dengan database PostgreSQL lokal alih-alih H2:
 
-### Postman Collection & Dynamic Environment
-The project includes a ready-to-use Postman Collection and Environment under the `postman/` directory:
-- **Collection**: [`postman/Shop_Warehouse_Management.postman_collection.json`](file:///Users/macbook/test-geli/postman/Shop_Warehouse_Management.postman_collection.json)
-- **Environment**: [`postman/Shop_Warehouse_Local.postman_environment.json`](file:///Users/macbook/test-geli/postman/Shop_Warehouse_Local.postman_environment.json)
-
-#### How to Import & Use in Postman:
-1. Open Postman and click **Import** (top left).
-2. Select both JSON files from the `postman/` folder.
-3. Select the active environment: **Shop Warehouse - Local Environment** (top right dropdown).
-4. Run `1. Authentication -> Login as Tester (Auto Set Token)`. The JWT token will automatically be extracted and stored in `{{token}}`.
-5. Run any requests in `Items`, `Variants`, `Inventory`, or `Orders`. IDs (`{{itemId}}`, `{{variantId}}`, `{{orderId}}`) and tokens are chained dynamically between requests!
-6. Run `5. Orders -> Place Order - REJECTED (Out of Stock Prevention)` to verify the system prevents out-of-stock orders with HTTP 409 Conflict.
-
-### H2 Database Web Console
-Access the in-memory database console at:
-```
-http://localhost:8080/h2-console
-```
-- **JDBC URL**: `jdbc:h2:mem:warehousedb`
-- **Username**: `sa`
-- **Password**: *(leave blank)*
+1. Buat database di PostgreSQL Anda:
+   ```sql
+   CREATE DATABASE warehousedb;
+   ```
+2. Jalankan aplikasi dengan profile `postgres`:
+   ```bash
+   ./mvnw spring-boot:run -Dspring-boot.run.profiles=postgres
+   ```
+*(Kredensial default: user `postgres`, password `postgres` pada port `5432`. Dapat diubah via environment variable `SPRING_DATASOURCE_USERNAME` dan `SPRING_DATASOURCE_PASSWORD`)*.
 
 ---
 
-## API Endpoints & cURL Examples
+## 👥 Akun Testing & Sample Data Bawaan
 
-### 1. Authentication
+Saat pertama kali server dinyalakan, [`DataInitializer.java`](file:///Users/macbook/test-geli/src/main/java/com/geli/warehouse/config/DataInitializer.java) secara otomatis mengisi data awal berikut:
 
-#### Register a new user
-```bash
-curl -X POST http://localhost:8080/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "warehouse_user",
-    "email": "user@warehouse.com",
-    "password": "password123",
-    "role": "ROLE_STAFF"
-  }'
+### 1. Kredensial Pengguna untuk Testing
+| Username | Password | Role | Keterangan Hak Akses |
+|---|---|---|---|
+| **`tester`** | **`tester123`** | `ROLE_ADMIN` | **Akun utama testing**, akses penuh ke semua endpoint CRUD |
+| `admin` | `admin123` | `ROLE_ADMIN` | Akun warehouse manager |
+| `staff` | `staff123` | `ROLE_STAFF` | Akun staf gudang |
+| `customer` | `customer123` | `ROLE_CUSTOMER` | Akun pelanggan toko |
+
+### 2. Data Barang, Varian, Harga & Stok Pre-loaded
+| Item SKU | Nama Barang | Variant SKU | Varian (Size / Warna) | Harga | Stok Fisik | Status Ketersediaan |
+|---|---|---|---|---|---|---|
+| `ITEM-TSHIRT` | Classic Cotton T-Shirt | `TSHIRT-BLK-M` | M / Black | $19.99 | 50 | ✅ **In Stock** |
+| `ITEM-TSHIRT` | Classic Cotton T-Shirt | `TSHIRT-BLK-L` | L / Black | $19.99 | 30 | ✅ **In Stock** |
+| `ITEM-TSHIRT` | Classic Cotton T-Shirt | `TSHIRT-WHT-M` | M / White | $18.99 | 3 | ⚠️ **Low Stock** (Threshold: 5) |
+| `ITEM-TSHIRT` | Classic Cotton T-Shirt | `TSHIRT-WHT-XL` | XL / White | $21.99 | **0** | ❌ **OUT OF STOCK (Uji Tolak)** |
+| `ITEM-SHOES` | Pro Running Shoes | `SHOES-GRY-42` | 42 / Grey | $89.99 | 15 | ✅ **In Stock** |
+| `ITEM-SHOES` | Pro Running Shoes | `SHOES-GRY-43` | 43 / Grey | $89.99 | **0** | ❌ **OUT OF STOCK (Uji Tolak)** |
+| `ITEM-SHOES` | Pro Running Shoes | `SHOES-BLU-42` | 42 / Blue | $94.99 | 8 | ✅ **In Stock** |
+| `ITEM-BACKPACK`| Urban Canvas Backpack | `BAG-NVY` | Standard / Navy | $45.00 | 20 | ✅ **In Stock** |
+
+---
+
+## 📮 Dokumentasi Interaktif & Postman
+
+### A. Swagger UI (Dokumentasi Browser)
+Akses: **[http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)**  
+Anda dapat mencoba setiap endpoint langsung dari antarmuka web, mengklik tombol **Authorize** dan memasukkan Bearer Token JWT.
+
+### B. Postman Collection & Environment
+File siap pakai tersedia di folder [`postman/`](file:///Users/macbook/test-geli/postman):
+- **Collection File**: [`postman/Shop_Warehouse_Management.postman_collection.json`](file:///Users/macbook/test-geli/postman/Shop_Warehouse_Management.postman_collection.json)
+- **Environment File**: [`postman/Shop_Warehouse_Local.postman_environment.json`](file:///Users/macbook/test-geli/postman/Shop_Warehouse_Local.postman_environment.json)
+
+#### Cara Pakai di Postman:
+1. Buka Postman, klik **Import** di kiri atas, lalu pilih kedua file di atas.
+2. Di pojok kanan atas Postman, pilih environment: **`Shop Warehouse - Local Environment`**.
+3. Jalankan request: **`1. Authentication -> Login as Tester`** lalu klik **Send**. Token otomatis tersimpan ke environment.
+4. Semua request berikutnya di folder `Items`, `Variants`, `Inventory`, dan `Orders` siap dijalankan tanpa perlu copy-paste token manual!
+
+---
+
+## 🏗 Arsitektur & Keputusan Desain (Design Decisions)
+
+Aplikasi ini menerapkan **Clean Layered Architecture** standar industri enterprise backend:
+
+```
+src/main/java/com/geli/warehouse/
+├── common/
+│   ├── exception/        # GlobalExceptionHandler & custom business exceptions
+│   └── response/         # Standard envelope ApiResponse<T>
+├── config/               # Swagger OpenAPI config & DataInitializer (Seeder)
+├── controller/           # REST Controller (/api/v1/...)
+├── dto/
+│   ├── request/          # Request payloads + Jakarta Bean Validation
+│   └── response/         # Decoupled response contracts
+├── model/
+│   ├── entity/           # JPA Entities (User, Item, ItemVariant, Inventory, Order, OrderItem)
+│   └── enums/            # Role, ItemStatus, OrderStatus, StockOperation
+├── repository/           # Spring Data JPA Repositories
+├── security/             # Spring Security 6, JWT Token Provider & Filter
+└── service/              # Service interfaces & @Transactional business logic
 ```
 
-#### Login to obtain JWT Token
+### Keputusan Desain Utama:
+1. **Decoupled DTO Pattern**: Domain Entity database tidak pernah diekspos langsung ke controller. Request dan response menggunakan DTO untuk mencegah *over-fetching*, *mass assignment vulnerability*, dan *circular dependency JSON*.
+2. **Standard API Response Envelope**: Semua response konsisten dibungkus dalam format:
+   ```json
+   {
+     "success": true,
+     "message": "Success",
+     "data": { ... },
+     "timestamp": "2026-10-18T10:00:00Z"
+   }
+   ```
+3. **Stateless JWT Security**: Menggunakan token JWT Bearer (HMAC-SHA256). Pengguna publik/customer dapat melihat katalog produk dan melakukan checkout order, sedangkan manajemen stok dan master barang dilindungi khusus untuk staf dan admin.
+4. **Optimistic Concurrency Control**: Entity `Inventory` dilengkapi anotasi `@Version` untuk menjamin tidak terjadi *race condition* dan *overselling* saat banyak order masuk bersamaan.
+5. **Clean & Readable Code**: Mengutamakan kode yang *self-documenting* melalui penamaan kelas, method, dan variabel yang ekspresif tanpa komentar yang berlebihan.
+
+---
+
+## 🛡 Mekanisme Pencegahan Penjualan Out-of-Stock
+
+Persyaratan inti PDF berbunyi: *"A way to prevent selling items that are out of stock"*.
+
+Berikut adalah alur logika yang diimplementasikan pada [`OrderServiceImpl.java`](file:///Users/macbook/test-geli/src/main/java/com/geli/warehouse/service/impl/OrderServiceImpl.java):
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Customer as Customer / Client
+    participant OrderController as OrderController
+    participant OrderService as OrderService (@Transactional)
+    participant InventoryRepo as InventoryRepository
+    participant OrderRepo as OrderRepository
+
+    Customer->>OrderController: POST /api/v1/orders { variantId, quantity }
+    OrderController->>OrderService: createOrder(request)
+    
+    loop Setiap Item yang Dipesan
+        OrderService->>InventoryRepo: findByVariantId(variantId)
+        InventoryRepo-->>OrderService: Inventory Record
+        
+        alt Stok Tersedia < Kuantitas yang Diminta (atau Stok == 0)
+            OrderService-->>Customer: THROW InsufficientStockException (HTTP 409 Conflict)
+            Note over OrderService: TRANSAKSI DI-ROLLBACK.<br>Tidak ada stok yang berkurang.
+        else Stok Cukup
+            OrderService->>InventoryRepo: Deduct stock atomically (qty - requested)
+            Note over OrderService: Concurrency Safe (@Version Lock)
+        end
+    end
+    
+    OrderService->>OrderRepo: Save Order & OrderItems
+    OrderService-->>Customer: HTTP 201 Created (Order Confirmed)
+```
+
+---
+
+## 🌐 Daftar Endpoint API & Contoh cURL
+
+Base URL: `http://localhost:8080`
+
+### 1. Autentikasi (`/api/v1/auth`)
+
+#### A. Login (Mendapatkan Bearer JWT Token)
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "username": "admin",
-    "password": "admin123"
+    "username": "tester",
+    "password": "tester123"
   }'
 ```
-
-*Example Response:*
+*Respons Sukses:*
 ```json
 {
   "success": true,
@@ -282,46 +256,45 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "tokenType": "Bearer",
     "expiresIn": 86400000,
-    "userId": 1,
-    "username": "admin",
+    "userId": 3,
+    "username": "tester",
     "role": "ROLE_ADMIN"
-  },
-  "timestamp": "2026-10-18T09:45:00Z"
+  }
 }
 ```
 
 ---
 
-### 2. Items & Catalog
+### 2. Katalog Barang (`/api/v1/items`)
 
-#### Get all items (Public)
+#### A. Ambil Semua Barang (Publik)
 ```bash
 curl -X GET http://localhost:8080/api/v1/items
 ```
 
-#### Search items by keyword
+#### B. Cari Barang Berdasarkan Kata Kunci (Keyword Search)
 ```bash
 curl -X GET "http://localhost:8080/api/v1/items?keyword=t-shirt"
 ```
 
-#### Create a new item with variants & stock (Requires Bearer Token)
+#### C. Tambah Barang Baru beserta Varian & Stok Awal (Auth)
 ```bash
 curl -X POST http://localhost:8080/api/v1/items \
-  -H "Authorization: Bearer <YOUR_TOKEN>" \
+  -H "Authorization: Bearer <TOKEN_ANDA>" \
   -H "Content-Type: application/json" \
   -d '{
     "sku": "ITEM-HOODIE",
-    "name": "Heavyweight Fleece Hoodie",
-    "description": "Warm winter hoodie with kangaroo pocket",
-    "basePrice": 49.99,
+    "name": "Heavy Fleece Zip Hoodie",
+    "description": "Warm winter fleece hoodie",
+    "basePrice": 59.99,
     "variants": [
       {
         "sku": "HOODIE-BLK-L",
         "variantName": "Black - Large",
         "size": "L",
         "color": "Black",
-        "price": 49.99,
-        "initialStock": 25,
+        "price": 59.99,
+        "initialStock": 40,
         "reorderThreshold": 5
       }
     ]
@@ -330,12 +303,12 @@ curl -X POST http://localhost:8080/api/v1/items \
 
 ---
 
-### 3. Variants
+### 3. Varian Barang (`/api/v1/variants`)
 
-#### Add a variant to an existing item
+#### A. Tambah Varian Baru ke Barang ID 1 (Auth)
 ```bash
 curl -X POST http://localhost:8080/api/v1/items/1/variants \
-  -H "Authorization: Bearer <YOUR_TOKEN>" \
+  -H "Authorization: Bearer <TOKEN_ANDA>" \
   -H "Content-Type: application/json" \
   -d '{
     "sku": "TSHIRT-RED-M",
@@ -350,46 +323,54 @@ curl -X POST http://localhost:8080/api/v1/items/1/variants \
 
 ---
 
-### 4. Inventory & Stock Management
+### 4. Manajemen Stok Gudang (`/api/v1/inventory`)
 
-#### View all inventory levels
-```bash
-curl -X GET http://localhost:8080/api/v1/inventory
-```
-
-#### Check low stock alerts
+#### A. Cek Peringatan Stok Menipis (Low Stock Alerts)
 ```bash
 curl -X GET http://localhost:8080/api/v1/inventory/low-stock
 ```
 
-#### Check out-of-stock items
+#### B. Cek Daftar Barang yang Habis (Out of Stock)
 ```bash
 curl -X GET http://localhost:8080/api/v1/inventory/out-of-stock
 ```
 
-#### Restock / Adjust inventory (ADD, DEDUCT, or SET)
+#### C. Inisialisasi Stok Varian via POST (Auth)
 ```bash
-curl -X PUT http://localhost:8080/api/v1/inventory/variant/4 \
-  -H "Authorization: Bearer <YOUR_TOKEN>" \
+curl -X POST http://localhost:8080/api/v1/inventory \
+  -H "Authorization: Bearer <TOKEN_ANDA>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "variantId": 1,
+    "quantity": 50,
+    "reorderThreshold": 10,
+    "notes": "Direct stock initialization"
+  }'
+```
+
+#### D. Restock Barang (Operasi: ADD, DEDUCT, atau SET) (Auth)
+```bash
+curl -X PUT http://localhost:8080/api/v1/inventory/variant/1 \
+  -H "Authorization: Bearer <TOKEN_ANDA>" \
   -H "Content-Type: application/json" \
   -d '{
     "operation": "ADD",
-    "quantity": 20,
-    "notes": "Restocked from supplier shipment"
+    "quantity": 25,
+    "notes": "Restock dari pengiriman supplier"
   }'
 ```
 
 ---
 
-### 5. Orders (Checkout & Out-of-Stock Prevention)
+### 5. Checkout & Penjualan (`/api/v1/orders`)
 
-#### A. Successful Order Placement (Items in stock)
+#### A. Pemesanan Normal (Barang Tersedia)
 ```bash
 curl -X POST http://localhost:8080/api/v1/orders \
   -H "Content-Type: application/json" \
   -d '{
-    "customerName": "Jane Doe",
-    "customerEmail": "jane@example.com",
+    "customerName": "Alice Smith",
+    "customerEmail": "alice@example.com",
     "items": [
       {
         "variantId": 1,
@@ -398,16 +379,16 @@ curl -X POST http://localhost:8080/api/v1/orders \
     ]
   }'
 ```
-*Response: HTTP 201 Created with order number and deducted inventory.*
+*Respons: HTTP 201 Created (Stok varian 1 otomatis berkurang 2 unit).*
 
-#### B. Out-of-Stock Prevention Demonstration
-Attempting to order an out-of-stock variant (e.g., variant ID 4 `TSHIRT-WHT-XL` which has 0 stock):
+#### B. Uji Coba Pencegahan Out-of-Stock (Barang Habis)
+Coba pesan Varian ID 4 (`TSHIRT-WHT-XL` yang stoknya sengaja 0):
 ```bash
 curl -X POST http://localhost:8080/api/v1/orders \
   -H "Content-Type: application/json" \
   -d '{
-    "customerName": "Mark Spencer",
-    "customerEmail": "mark@example.com",
+    "customerName": "Bob Miller",
+    "customerEmail": "bob@example.com",
     "items": [
       {
         "variantId": 4,
@@ -416,33 +397,42 @@ curl -X POST http://localhost:8080/api/v1/orders \
     ]
   }'
 ```
-
-*Response: HTTP 409 Conflict*
+*Respons: **HTTP 409 Conflict** (Pesanan otomatis ditolak dan transaksi dibatalkan):*
 ```json
 {
   "success": false,
   "message": "Cannot fulfill order for variant 'White - XL' [SKU: TSHIRT-WHT-XL] (OUT OF STOCK). Requested: 1, Available: 0",
-  "timestamp": "2026-10-18T09:47:12Z"
+  "timestamp": "2026-10-18T10:05:00Z"
 }
 ```
 
 ---
 
-## Assumptions Made
+## 📌 Asumsi yang Dibuat (Assumptions Made)
 
-1. **Variant-level Stocking**: In modern warehouse management, physical inventory is tracked at the SKU/Variant level (specific size/color combination), as stock belongs to physical variant units rather than the abstract parent product.
-2. **Pricing Precedence**: Each variant defines its specific selling price. The parent item defines a default `basePrice` for catalog reference.
-3. **Checkout Experience**: Order placement (`POST /api/v1/orders`) is open to shop customers (public or authenticated), while stock management and catalog editing require staff/admin credentials.
-4. **Data Isolation in H2**: In-memory H2 database is used as permitted in the assessment specification. For production deployment, switching to PostgreSQL or MySQL requires only updating the JDBC driver and connection properties in `application.yml`.
+1. **Pelacakan Stok pada Level Varian (SKU)**: Pada sistem gudang modern, unit stok fisik dilacak pada level varian (kombinasi ukuran dan warna tertentu), bukan pada produk induk yang bersifat abstrak.
+2. **Prioritas Penetapan Harga**: Harga jual utama ditentukan pada tingkat varian (`variant.price`). Produk induk menyimpan `basePrice` untuk referensi umum katalog.
+3. **Aksesibilitas Checkout**: Endpoint checkout (`POST /api/v1/orders`) terbuka untuk umum/customer, sedangkan manipulasi data master dan mutasi stok memerlukan autentikasi role Staf/Admin.
+4. **Isolasi Database In-Memory**: Menggunakan database H2 in-memory sebagai default sesuai izin di PDF agar evaluator tidak perlu menginstal software tambahan saat memeriksa kode.
 
 ---
 
-## Running Tests
+## 🧪 Menjalankan Automated Tests
 
-Execute the automated test suite with Maven:
+Seluruh skenario pengujian unit dan integrasi dapat dijalankan dengan perintah:
 
 ```bash
 ./mvnw clean test
 ```
 
-All unit and integration tests (including the out-of-stock rejection integration test) will execute and report test outcomes.
+### Lingkup Pengujian:
+- **`OrderServiceTest`**: Pengujian unit kalkulasi total order, deduksi stok, dan penolakan saat stok habis atau tidak mencukupi.
+- **`OrderIntegrationTest`**: Pengujian integrasi end-to-end pemesanan via MockMvc (mengecek HTTP 201 vs HTTP 409 Conflict).
+- **`AuthIntegrationTest`**: Pengujian integrasi registrasi user dan login untuk mendapatkan JWT Bearer token.
+- **`WarehouseApplicationTests`**: Pengujian inisialisasi Spring Application Context.
+
+Hasil test:
+```text
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+```
