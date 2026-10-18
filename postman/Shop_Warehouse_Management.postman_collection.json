@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "c8a1e2f3-b4d5-4e6f-8a9b-0c1d2e3f4a5b",
     "name": "Shop Warehouse Management System",
-    "description": "Production-grade REST API collection with dynamic environment chaining, automated token extraction, and out-of-stock validation testing.",
+    "description": "REST API collection with direct payload values and automatic JWT Bearer token extraction.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -16,17 +16,16 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
+                  "pm.test(\"Status code is 200 OK\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
                   "var jsonData = pm.response.json();",
-                  "pm.test(\"Token received\", function () {",
+                  "pm.test(\"Login successful\", function () {",
                   "    pm.expect(jsonData.success).to.be.true;",
                   "    pm.expect(jsonData.data.accessToken).to.be.a('string');",
                   "});",
                   "if (jsonData && jsonData.data && jsonData.data.accessToken) {",
                   "    pm.environment.set(\"token\", jsonData.data.accessToken);",
-                  "    console.log(\"Saved JWT Token to environment: \" + jsonData.data.accessToken);",
                   "}"
                 ],
                 "type": "text/javascript"
@@ -43,7 +42,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"{{testerUsername}}\",\n  \"password\": \"{{testerPassword}}\"\n}"
+              "raw": "{\n  \"username\": \"tester\",\n  \"password\": \"tester123\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/auth/login",
@@ -57,7 +56,7 @@
                 "login"
               ]
             },
-            "description": "Authenticates as the test admin user ('tester' / 'tester123') and automatically stores the Bearer JWT token into the environment variable {{token}}."
+            "description": "Authenticates as 'tester' / 'tester123' and automatically stores the JWT token in {{token}}."
           },
           "response": []
         },
@@ -68,7 +67,7 @@
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
+                  "pm.test(\"Status code is 200 OK\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
                   "var jsonData = pm.response.json();",
@@ -90,7 +89,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/auth/login",
@@ -108,7 +107,7 @@
           "response": []
         },
         {
-          "name": "Register New Staff User (Dynamic)",
+          "name": "Register New Staff User",
           "event": [
             {
               "listen": "test",
@@ -136,7 +135,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"staff_{{$timestamp}}\",\n  \"email\": \"staff_{{$timestamp}}@warehouse.com\",\n  \"password\": \"StaffPass123!\",\n  \"role\": \"ROLE_STAFF\"\n}"
+              "raw": "{\n  \"username\": \"staff_demo\",\n  \"email\": \"staff_demo@warehouse.com\",\n  \"password\": \"StaffPassword123!\",\n  \"role\": \"ROLE_STAFF\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/auth/register",
@@ -160,26 +159,6 @@
       "item": [
         {
           "name": "Get All Items (Public)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "var jsonData = pm.response.json();",
-                  "if (jsonData && jsonData.data && jsonData.data.length > 0) {",
-                  "    pm.environment.set(\"itemId\", jsonData.data[0].id);",
-                  "    if (jsonData.data[0].variants && jsonData.data[0].variants.length > 0) {",
-                  "        pm.environment.set(\"variantId\", jsonData.data[0].variants[0].id);",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -223,12 +202,12 @@
           "response": []
         },
         {
-          "name": "Get Item by ID (Dynamic {{itemId}})",
+          "name": "Get Item by ID (Item ID 1)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/items/{{itemId}}",
+              "raw": "{{baseUrl}}/api/v1/items/1",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -236,7 +215,7 @@
                 "api",
                 "v1",
                 "items",
-                "{{itemId}}"
+                "1"
               ]
             }
           },
@@ -265,26 +244,6 @@
         },
         {
           "name": "Create New Item with Variants (Auth)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 201 Created\", function () {",
-                  "    pm.response.to.have.status(201);",
-                  "});",
-                  "var jsonData = pm.response.json();",
-                  "if (jsonData && jsonData.data) {",
-                  "    pm.environment.set(\"itemId\", jsonData.data.id);",
-                  "    if (jsonData.data.variants && jsonData.data.variants.length > 0) {",
-                  "        pm.environment.set(\"variantId\", jsonData.data.variants[0].id);",
-                  "    }",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "auth": {
               "type": "bearer",
@@ -305,7 +264,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"sku\": \"ITEM-HOODIE-{{$timestamp}}\",\n  \"name\": \"Heavy Fleece Zip Hoodie\",\n  \"description\": \"Premium heavyweight winter hoodie\",\n  \"basePrice\": 59.99,\n  \"variants\": [\n    {\n      \"sku\": \"HOODIE-BLK-L-{{$timestamp}}\",\n      \"variantName\": \"Black - Large\",\n      \"size\": \"L\",\n      \"color\": \"Black\",\n      \"price\": 59.99,\n      \"initialStock\": 40,\n      \"reorderThreshold\": 5\n    },\n    {\n      \"sku\": \"HOODIE-NVY-XL-{{$timestamp}}\",\n      \"variantName\": \"Navy - XL\",\n      \"size\": \"XL\",\n      \"color\": \"Navy\",\n      \"price\": 64.99,\n      \"initialStock\": 0,\n      \"reorderThreshold\": 5\n    }\n  ]\n}"
+              "raw": "{\n  \"sku\": \"ITEM-HOODIE\",\n  \"name\": \"Heavyweight Fleece Zip Hoodie\",\n  \"description\": \"Premium heavyweight winter hoodie with kangaroo pocket\",\n  \"basePrice\": 59.99,\n  \"variants\": [\n    {\n      \"sku\": \"HOODIE-BLK-L\",\n      \"variantName\": \"Black - Large\",\n      \"size\": \"L\",\n      \"color\": \"Black\",\n      \"price\": 59.99,\n      \"initialStock\": 40,\n      \"reorderThreshold\": 5\n    },\n    {\n      \"sku\": \"HOODIE-NVY-XL\",\n      \"variantName\": \"Navy - XL\",\n      \"size\": \"XL\",\n      \"color\": \"Navy\",\n      \"price\": 64.99,\n      \"initialStock\": 0,\n      \"reorderThreshold\": 5\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/items",
@@ -343,10 +302,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Updated Product Name\",\n  \"description\": \"Updated product description for warehouse\",\n  \"basePrice\": 65.00,\n  \"status\": \"ACTIVE\"\n}"
+              "raw": "{\n  \"name\": \"Classic Cotton T-Shirt (Premium Edition)\",\n  \"description\": \"100% combed organic breathable cotton\",\n  \"basePrice\": 24.99,\n  \"status\": \"ACTIVE\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/v1/items/{{itemId}}",
+              "raw": "{{baseUrl}}/api/v1/items/1",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -354,7 +313,7 @@
                 "api",
                 "v1",
                 "items",
-                "{{itemId}}"
+                "1"
               ]
             }
           },
@@ -366,24 +325,7 @@
       "name": "3. Variants Management",
       "item": [
         {
-          "name": "Add Variant to Item (Auth)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 201 Created\", function () {",
-                  "    pm.response.to.have.status(201);",
-                  "});",
-                  "var jsonData = pm.response.json();",
-                  "if (jsonData && jsonData.data) {",
-                  "    pm.environment.set(\"variantId\", jsonData.data.id);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
+          "name": "Add Variant to Item 1 (Auth)",
           "request": {
             "auth": {
               "type": "bearer",
@@ -404,10 +346,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"sku\": \"VAR-GRN-M-{{$timestamp}}\",\n  \"variantName\": \"Olive Green - Medium\",\n  \"size\": \"M\",\n  \"color\": \"Olive Green\",\n  \"price\": 22.50,\n  \"initialStock\": 18,\n  \"reorderThreshold\": 5\n}"
+              "raw": "{\n  \"sku\": \"TSHIRT-RED-M\",\n  \"variantName\": \"Red - Medium\",\n  \"size\": \"M\",\n  \"color\": \"Red\",\n  \"price\": 19.99,\n  \"initialStock\": 15,\n  \"reorderThreshold\": 5\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/v1/items/{{itemId}}/variants",
+              "raw": "{{baseUrl}}/api/v1/items/1/variants",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -415,7 +357,7 @@
                 "api",
                 "v1",
                 "items",
-                "{{itemId}}",
+                "1",
                 "variants"
               ]
             }
@@ -423,12 +365,12 @@
           "response": []
         },
         {
-          "name": "Get Variants by Item ID",
+          "name": "Get Variants by Item 1",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/items/{{itemId}}/variants",
+              "raw": "{{baseUrl}}/api/v1/items/1/variants",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -436,7 +378,7 @@
                 "api",
                 "v1",
                 "items",
-                "{{itemId}}",
+                "1",
                 "variants"
               ]
             }
@@ -444,12 +386,12 @@
           "response": []
         },
         {
-          "name": "Get Variant by ID (Dynamic {{variantId}})",
+          "name": "Get Variant by ID (Variant 1)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/variants/{{variantId}}",
+              "raw": "{{baseUrl}}/api/v1/variants/1",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -457,7 +399,7 @@
                 "api",
                 "v1",
                 "variants",
-                "{{variantId}}"
+                "1"
               ]
             }
           },
@@ -485,10 +427,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"variantName\": \"Forest Olive - Medium\",\n  \"size\": \"M\",\n  \"color\": \"Forest Olive\",\n  \"price\": 24.00\n}"
+              "raw": "{\n  \"variantName\": \"Black - Medium (Special Edition)\",\n  \"size\": \"M\",\n  \"color\": \"Matte Black\",\n  \"price\": 22.99\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/v1/variants/{{variantId}}",
+              "raw": "{{baseUrl}}/api/v1/variants/1",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -496,7 +438,7 @@
                 "api",
                 "v1",
                 "variants",
-                "{{variantId}}"
+                "1"
               ]
             }
           },
@@ -527,12 +469,12 @@
           "response": []
         },
         {
-          "name": "Get Variant Inventory by ID (Dynamic)",
+          "name": "Get Variant Inventory (Variant 1)",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/inventory/variant/{{variantId}}",
+              "raw": "{{baseUrl}}/api/v1/inventory/variant/1",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -541,7 +483,7 @@
                 "v1",
                 "inventory",
                 "variant",
-                "{{variantId}}"
+                "1"
               ]
             }
           },
@@ -568,25 +510,7 @@
           "response": []
         },
         {
-          "name": "Get Out of Stock Items (Auto Set outOfStockVariantId)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "var jsonData = pm.response.json();",
-                  "if (jsonData && jsonData.data && jsonData.data.length > 0) {",
-                  "    pm.environment.set(\"outOfStockVariantId\", jsonData.data[0].variantId);",
-                  "    console.log(\"Saved outOfStockVariantId: \" + jsonData.data[0].variantId);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
+          "name": "Get Out of Stock Items",
           "request": {
             "method": "GET",
             "header": [],
@@ -627,10 +551,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"operation\": \"ADD\",\n  \"quantity\": 25,\n  \"notes\": \"Restock received from supplier\"\n}"
+              "raw": "{\n  \"operation\": \"ADD\",\n  \"quantity\": 20,\n  \"notes\": \"Restock from vendor shipment\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/v1/inventory/variant/{{variantId}}",
+              "raw": "{{baseUrl}}/api/v1/inventory/variant/1",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -639,7 +563,7 @@
                 "v1",
                 "inventory",
                 "variant",
-                "{{variantId}}"
+                "1"
               ]
             }
           },
@@ -667,10 +591,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"operation\": \"SET\",\n  \"quantity\": 50,\n  \"reorderThreshold\": 10,\n  \"notes\": \"Audit stock adjustment\"\n}"
+              "raw": "{\n  \"operation\": \"SET\",\n  \"quantity\": 50,\n  \"reorderThreshold\": 10,\n  \"notes\": \"Warehouse audit adjustment\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/v1/inventory/variant/{{variantId}}",
+              "raw": "{{baseUrl}}/api/v1/inventory/variant/1",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -679,7 +603,7 @@
                 "v1",
                 "inventory",
                 "variant",
-                "{{variantId}}"
+                "1"
               ]
             }
           },
@@ -710,7 +634,7 @@
               "raw": "{\n  \"operation\": \"DEDUCT\",\n  \"quantity\": 2,\n  \"notes\": \"Damaged units write-off\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/v1/inventory/variant/{{variantId}}",
+              "raw": "{{baseUrl}}/api/v1/inventory/variant/1",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -719,7 +643,7 @@
                 "v1",
                 "inventory",
                 "variant",
-                "{{variantId}}"
+                "1"
               ]
             }
           },
@@ -731,29 +655,7 @@
       "name": "5. Orders & Out-of-Stock Prevention",
       "item": [
         {
-          "name": "Place Order - SUCCESS (Items in Stock)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 201 Created\", function () {",
-                  "    pm.response.to.have.status(201);",
-                  "});",
-                  "var jsonData = pm.response.json();",
-                  "pm.test(\"Order successfully created\", function () {",
-                  "    pm.expect(jsonData.success).to.be.true;",
-                  "    pm.expect(jsonData.data.orderNumber).to.be.a('string');",
-                  "});",
-                  "if (jsonData && jsonData.data) {",
-                  "    pm.environment.set(\"orderId\", jsonData.data.id);",
-                  "    pm.environment.set(\"orderNumber\", jsonData.data.orderNumber);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
+          "name": "Place Order - SUCCESS (Variant 1 in Stock)",
           "request": {
             "method": "POST",
             "header": [
@@ -764,7 +666,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customerName\": \"Customer {{$timestamp}}\",\n  \"customerEmail\": \"customer_{{$timestamp}}@example.com\",\n  \"items\": [\n    {\n      \"variantId\": {{variantId}},\n      \"quantity\": 2\n    }\n  ]\n}"
+              "raw": "{\n  \"customerName\": \"Alice Smith\",\n  \"customerEmail\": \"alice@example.com\",\n  \"items\": [\n    {\n      \"variantId\": 1,\n      \"quantity\": 2\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/orders",
@@ -777,7 +679,7 @@
                 "orders"
               ]
             },
-            "description": "Places an order for an available variant. Stock is deducted automatically."
+            "description": "Places an order for variant 1 ('TSHIRT-BLK-M', stock: 50). Stock is deducted automatically."
           },
           "response": []
         },
@@ -811,7 +713,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customerName\": \"Oversell Attempt\",\n  \"customerEmail\": \"oversell@example.com\",\n  \"items\": [\n    {\n      \"variantId\": {{outOfStockVariantId}},\n      \"quantity\": 1\n    }\n  ]\n}"
+              "raw": "{\n  \"customerName\": \"Bob Miller\",\n  \"customerEmail\": \"bob@example.com\",\n  \"items\": [\n    {\n      \"variantId\": 4,\n      \"quantity\": 1\n    }\n  ]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/v1/orders",
@@ -824,7 +726,7 @@
                 "orders"
               ]
             },
-            "description": "CRITICAL TEST: Demonstrates prevention of selling items that are out of stock. Variant {{outOfStockVariantId}} has 0 stock, so this request is rejected with HTTP 409 Conflict."
+            "description": "CRITICAL TEST: Variant 4 ('TSHIRT-WHT-XL') has 0 stock. This order is automatically rejected with HTTP 409 Conflict."
           },
           "response": []
         },
@@ -858,7 +760,7 @@
           "response": []
         },
         {
-          "name": "Get Order by ID (Dynamic {{orderId}})",
+          "name": "Get Order by ID (Order 1)",
           "request": {
             "auth": {
               "type": "bearer",
@@ -873,7 +775,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/orders/{{orderId}}",
+              "raw": "{{baseUrl}}/api/v1/orders/1",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -881,38 +783,7 @@
                 "api",
                 "v1",
                 "orders",
-                "{{orderId}}"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get Order by Order Number (Dynamic {{orderNumber}})",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/v1/orders/number/{{orderNumber}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "orders",
-                "number",
-                "{{orderNumber}}"
+                "1"
               ]
             }
           },
