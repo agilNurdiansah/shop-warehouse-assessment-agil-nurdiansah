@@ -6,24 +6,22 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonInclude(JsonInclude.Include.ALWAYS)
 public class ApiResponse<T> {
 
-    private boolean success;
+    private Integer code;
+    private String status;
     private String message;
     private T data;
-    @Builder.Default
-    private Instant timestamp = Instant.now();
 
     public static <T> ApiResponse<T> ok(T data) {
         return ApiResponse.<T>builder()
-                .success(true)
+                .code(200)
+                .status("success")
                 .message("Success")
                 .data(data)
                 .build();
@@ -31,24 +29,45 @@ public class ApiResponse<T> {
 
     public static <T> ApiResponse<T> ok(String message, T data) {
         return ApiResponse.<T>builder()
-                .success(true)
+                .code(200)
+                .status("success")
+                .message(message)
+                .data(data)
+                .build();
+    }
+
+    public static <T> ApiResponse<T> created(String message, T data) {
+        return ApiResponse.<T>builder()
+                .code(201)
+                .status("success")
+                .message(message)
+                .data(data)
+                .build();
+    }
+
+    public static <T> ApiResponse<T> error(int code, String message) {
+        return ApiResponse.<T>builder()
+                .code(code)
+                .status("gagal")
+                .message(message)
+                .data(null)
+                .build();
+    }
+
+    public static <T> ApiResponse<T> error(int code, String message, T data) {
+        return ApiResponse.<T>builder()
+                .code(code)
+                .status("gagal")
                 .message(message)
                 .data(data)
                 .build();
     }
 
     public static <T> ApiResponse<T> error(String message) {
-        return ApiResponse.<T>builder()
-                .success(false)
-                .message(message)
-                .build();
+        return error(400, message);
     }
 
     public static <T> ApiResponse<T> error(String message, T data) {
-        return ApiResponse.<T>builder()
-                .success(false)
-                .message(message)
-                .data(data)
-                .build();
+        return error(400, message, data);
     }
 }

@@ -28,7 +28,7 @@ public class OrderController {
     public ResponseEntity<ApiResponse<OrderResponse>> createOrder(@Valid @RequestBody CreateOrderRequest request) {
         OrderResponse response = orderService.createOrder(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("Order placed successfully", response));
+                .body(ApiResponse.created("Order placed successfully", response));
     }
 
     @GetMapping

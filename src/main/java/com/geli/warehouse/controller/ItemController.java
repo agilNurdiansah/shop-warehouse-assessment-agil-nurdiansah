@@ -31,7 +31,7 @@ public class ItemController {
     public ResponseEntity<ApiResponse<ItemResponse>> createItem(@Valid @RequestBody CreateItemRequest request) {
         ItemResponse response = itemService.createItem(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("Item created successfully", response));
+                .body(ApiResponse.created("Item created successfully", response));
     }
 
     @GetMapping

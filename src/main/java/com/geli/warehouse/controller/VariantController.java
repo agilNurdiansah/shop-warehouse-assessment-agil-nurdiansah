@@ -31,7 +31,7 @@ public class VariantController {
             @Valid @RequestBody CreateVariantRequest request) {
         VariantResponse response = variantService.addVariant(itemId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("Variant added successfully", response));
+                .body(ApiResponse.created("Variant added successfully", response));
     }
 
     @GetMapping("/api/v1/items/{itemId}/variants")

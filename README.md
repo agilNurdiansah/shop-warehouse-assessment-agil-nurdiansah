@@ -183,10 +183,10 @@ src/main/java/com/geli/warehouse/
 2. **Standard API Response Envelope**: Semua response konsisten dibungkus dalam format:
    ```json
    {
-     "success": true,
+     "code": 200,
+     "status": "success",
      "message": "Success",
-     "data": { ... },
-     "timestamp": "2026-10-18T10:00:00Z"
+     "data": { ... }
    }
    ```
 3. **Stateless JWT Security**: Menggunakan token JWT Bearer (HMAC-SHA256). Pengguna publik/customer dapat melihat katalog produk dan melakukan checkout order, sedangkan manajemen stok dan master barang dilindungi khusus untuk staf dan admin.
@@ -250,7 +250,8 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 *Respons Sukses:*
 ```json
 {
-  "success": true,
+  "code": 200,
+  "status": "success",
   "message": "Login successful",
   "data": {
     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -400,9 +401,10 @@ curl -X POST http://localhost:8080/api/v1/orders \
 *Respons: **HTTP 409 Conflict** (Pesanan otomatis ditolak dan transaksi dibatalkan):*
 ```json
 {
-  "success": false,
+  "code": 409,
+  "status": "gagal",
   "message": "Cannot fulfill order for variant 'White - XL' [SKU: TSHIRT-WHT-XL] (OUT OF STOCK). Requested: 1, Available: 0",
-  "timestamp": "2026-10-18T10:05:00Z"
+  "data": null
 }
 ```
 
