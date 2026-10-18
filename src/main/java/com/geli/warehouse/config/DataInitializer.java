@@ -54,8 +54,24 @@ public class DataInitializer implements CommandLineRunner {
                 .role(Role.ROLE_STAFF)
                 .build();
 
+        User tester = User.builder()
+                .username("tester")
+                .email("tester@warehouse.com")
+                .password(passwordEncoder.encode("tester123"))
+                .role(Role.ROLE_ADMIN)
+                .build();
+
+        User customer = User.builder()
+                .username("customer")
+                .email("customer@example.com")
+                .password(passwordEncoder.encode("customer123"))
+                .role(Role.ROLE_CUSTOMER)
+                .build();
+
         userRepository.save(admin);
         userRepository.save(staff);
+        userRepository.save(tester);
+        userRepository.save(customer);
     }
 
     private void seedCatalog() {

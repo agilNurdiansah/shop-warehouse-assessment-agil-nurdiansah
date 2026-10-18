@@ -169,11 +169,13 @@ Preventing out-of-stock sales is implemented at the core transactional boundary:
 
 Upon application startup, `DataInitializer` automatically seeds realistic sample data:
 
-### 1. Default Users
+### 1. Default Users & Testing Credentials
 | Username | Password | Role | Description |
 |---|---|---|---|
+| `tester` | `tester123` | `ROLE_ADMIN` | Dedicated testing user with full administrative privileges |
 | `admin` | `admin123` | `ROLE_ADMIN` | Full access (Warehouse manager) |
 | `staff` | `staff123` | `ROLE_STAFF` | Inventory & item editing |
+| `customer` | `customer123` | `ROLE_CUSTOMER` | Standard shop customer |
 
 ### 2. Pre-loaded Catalog & Stock
 | Item SKU | Item Name | Variant SKU | Size / Color | Price | Stock | Stock Status |
@@ -220,6 +222,19 @@ Open your browser and navigate to:
 http://localhost:8080/swagger-ui.html
 ```
 You can test all endpoints directly, authenticate via the "Authorize" button using a Bearer token, and inspect schemas.
+
+### Postman Collection & Dynamic Environment
+The project includes a ready-to-use Postman Collection and Environment under the `postman/` directory:
+- **Collection**: [`postman/Shop_Warehouse_Management.postman_collection.json`](file:///Users/macbook/test-geli/postman/Shop_Warehouse_Management.postman_collection.json)
+- **Environment**: [`postman/Shop_Warehouse_Local.postman_environment.json`](file:///Users/macbook/test-geli/postman/Shop_Warehouse_Local.postman_environment.json)
+
+#### How to Import & Use in Postman:
+1. Open Postman and click **Import** (top left).
+2. Select both JSON files from the `postman/` folder.
+3. Select the active environment: **Shop Warehouse - Local Environment** (top right dropdown).
+4. Run `1. Authentication -> Login as Tester (Auto Set Token)`. The JWT token will automatically be extracted and stored in `{{token}}`.
+5. Run any requests in `Items`, `Variants`, `Inventory`, or `Orders`. IDs (`{{itemId}}`, `{{variantId}}`, `{{orderId}}`) and tokens are chained dynamically between requests!
+6. Run `5. Orders -> Place Order - REJECTED (Out of Stock Prevention)` to verify the system prevents out-of-stock orders with HTTP 409 Conflict.
 
 ### H2 Database Web Console
 Access the in-memory database console at:
