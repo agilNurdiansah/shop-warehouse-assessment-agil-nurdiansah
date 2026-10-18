@@ -24,6 +24,34 @@ public class InventoryServiceImpl implements InventoryService {
     private final ItemVariantRepository itemVariantRepository;
 
     @Override
+    @Transactional
+    public InventoryResponse createInventory(com.geli.warehouse.dto.request.inventory.CreateInventoryRequest request) {
+        ItemVariant variant = itemVariantRepository.findById(request.getVariantId())
+                .orElseThrow(() -> new ResourceNotFoundException("Variant not found with id: " + request.getVariantId()));
+
+        Inventory inventory = inventoryRepository.findByVariantId(variant.getId())
+                .orElseGet(() -> {
+                    Inventory newInv = Inventory.builder()
+                            .variant(variant)
+                            .reservedQuantity(0)
+                            .build();
+                    variant.setInventory(newInv);
+                    return newInv;
+                });
+
+        inventory.setQuantity(request.getQuantity());
+        if (request.getReorderThreshold() != null) {
+            inventory.setReorderThreshold(request.getReorderThreshold());
+        }
+        if (request.getQuantity() > 0) {
+            inventory.setLastRestockedAt(Instant.now());
+        }
+
+        Inventory saved = inventoryRepository.save(inventory);
+        return mapToInventoryResponse(saved);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public InventoryResponse getInventoryByVariantId(Long variantId) {
         Inventory inventory = inventoryRepository.findByVariantId(variantId)

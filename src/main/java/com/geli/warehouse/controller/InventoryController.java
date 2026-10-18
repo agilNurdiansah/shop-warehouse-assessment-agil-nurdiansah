@@ -22,6 +22,16 @@ public class InventoryController {
 
     private final InventoryService inventoryService;
 
+    @PostMapping
+    @SecurityRequirement(name = "Bearer Authentication")
+    @Operation(summary = "Initialize or set inventory stock for a variant")
+    public ResponseEntity<ApiResponse<InventoryResponse>> createInventory(
+            @Valid @RequestBody com.geli.warehouse.dto.request.inventory.CreateInventoryRequest request) {
+        InventoryResponse response = inventoryService.createInventory(request);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
+                .body(ApiResponse.ok("Inventory initialized successfully", response));
+    }
+
     @GetMapping
     @Operation(summary = "Get all inventory records")
     public ResponseEntity<ApiResponse<List<InventoryResponse>>> getAllInventories() {

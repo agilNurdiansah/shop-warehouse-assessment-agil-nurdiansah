@@ -530,6 +530,44 @@
           "response": []
         },
         {
+          "name": "Initialize / Register Stock - POST (Auth)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variantId\": 1,\n  \"quantity\": 35,\n  \"reorderThreshold\": 8,\n  \"notes\": \"Direct stock initialization via POST\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/inventory",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "inventory"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Restock Inventory - ADD (Auth)",
           "request": {
             "auth": {
